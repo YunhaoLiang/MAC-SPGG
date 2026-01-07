@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# API Keys and Secrets
+.env
+*.key
+*_key.txt
+api_keys.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model checkpoints and data
+*.pt
+!checkpoints/checkpoint.pt
+*.pth
+*.bin
+*.ckpt
+checkpoints/*
+!checkpoints/checkpoint.pt
+data/
+datasets/
+*.json
+!requirements.json
+!package.json
+
+# Logs
+*.log
+logs/
+wandb/
+
+# Results
+results/
+outputs/
+*.csv
+# Security
+.env
+*.key
+*_key.txt
+api_keys.json
