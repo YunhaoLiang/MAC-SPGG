@@ -185,7 +185,7 @@ python qwen2.5_evaluator_training.py
 
 ## Checkpoints
 
-The repository includes a minimal inference checkpoint (3.0 MB) containing:
+The repository includes a inference checkpoint (3.0 MB) containing:
 
 - `config`: Training configuration and hyperparameters
 - `agents['Agent_Llama']['policy_net']`: Policy network for Llama
