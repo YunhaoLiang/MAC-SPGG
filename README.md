@@ -19,9 +19,9 @@
 
 MAC-SPGG (Multi-Agent Cooperation Sequential Public Goods Game) addresses the fundamental challenge of coordinating multiple large language models to solve complex tasks collaboratively. Traditional multi-agent approaches suffer from free-riding behaviors and lack principled mechanisms for cooperation incentivization. We introduce a novel game-theoretic framework that:
 
-- **Eliminates free-riding** through carefully designed reward mechanisms achieving unique Subgame Perfect Nash Equilibrium (SPNE)
-- **Reduces communication overhead** via sequential decision-making protocol instead of costly round-based information exchanges
-- **Enables parameter-efficient cooperation** by learning optimal generation parameters rather than fine-tuning entire models
+- Eliminates free-riding through carefully designed reward mechanisms achieving unique Subgame Perfect Nash Equilibrium (SPNE)
+- Reduces communication overhead via sequential decision-making protocol instead of costly round-based information exchanges
+- Enables efficient cooperation rather than fine-tuning entire models
 
 ### Technical Innovation
 
