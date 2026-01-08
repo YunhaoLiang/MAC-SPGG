@@ -215,7 +215,7 @@ def run_gsm8k_partial_observation(
 def main():
     """Main entry point for local GSM8K SPGG evaluation."""
     # Checkpoint path (relative to SPGG root)
-    checkpoint_path = os.path.join(SPGG_ROOT, "checkpoints", "checkpoint.pt")
+    checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")

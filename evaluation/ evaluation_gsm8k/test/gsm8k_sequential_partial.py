@@ -26,7 +26,7 @@ sys.path.insert(0, SPGG_ROOT)
 
 from huggingface_hub import login
 
-from core import (
+from src.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
@@ -245,7 +245,7 @@ def main():
     dynamic parameter generators, and runs evaluation on all GSM8K problems.
     """
     # Checkpoint path (relative to SPGG root)
-    checkpoint_path = os.path.join(SPGG_ROOT, "checkpoints", "checkpoint.pt")
+    checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")

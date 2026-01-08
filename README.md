@@ -39,7 +39,7 @@ Our framework combines three key innovations:
 
 ### System Overview
 
-![SPGG Architecture](utils/work_flow.png)
+![SPGG Architecture](assets/work_flow.png)
 
 The framework operates in two distinct phases:
 
@@ -49,7 +49,7 @@ The framework operates in two distinct phases:
 
 ### Game-Theoretic Formulation
 
-![SPGG Workflow](utils/Workflow.png)
+![SPGG Workflow](assets/Workflow.png)
 
 **Sequential Decision Process**: Each agent observes the action history, decides its contribution quality level in [0,1], and receives rewards based on:
 - **Individual cost**: Direct cost proportional to contribution effort
@@ -74,12 +74,24 @@ The framework operates in two distinct phases:
 
 ```
 SPGG/
-├── core/                                    # Core inference components
-│   ├── agents.py                            # APIModelManager, agent implementations
-│   ├── config.py                            
-│   ├── networks.py                          
-│   ├── encoders.py                          
-│   └── utils.py                             # Parameter parsing, checkpoint loading
+├── src/                                     # Source code directory
+│   ├── core/                                # Core inference components
+│   │   ├── agents.py                        # APIModelManager, agent implementations
+│   │   ├── config.py                            
+│   │   ├── networks.py                          
+│   │   ├── encoders.py                          
+│   │   └── utils.py                         # Parameter parsing, checkpoint loading
+│   │
+│   ├── checkpoints/                         # Model checkpoints
+│   │   └── checkpoint.pt                        
+│   │
+│   └── utils/                               # Utility modules
+│       ├── pgg_rl_utils.py                      
+│       └── performance_metrics.py               
+│
+├── assets/                                  # Images and static resources
+│   ├── work_flow.png                            
+│   └── Workflow.png                             
 │
 ├── evaluation/
 │   ├── evaluation_gsm8k/                    # API-based evaluation suite
@@ -87,14 +99,13 @@ SPGG/
 │   │       ├── gsm8k_sequential_partial.py  # Partial observation protocol
 │   │       └── gsm8k_sequential_full.py     # Full observation protocol
 │   │
-│   └── local/                               # Local model evaluatio
+│   └── local/                               # Local model evaluation
 │       ├── core/                            
 │       └── test/
 │           ├── gsm8k_local_partial.py      
 │           └── gsm8k_local_full.py          
 │
 ├── training/
-│   ├── config.py                            # Training configurations
 │   └── evaluators/                          # Evaluator model training pipeline
 │       ├── qwen2.5_evaluator_training.py    
 │       ├── summeval_data_cleaner_colab.py   
@@ -103,14 +114,6 @@ SPGG/
 │           ├── prompts.py                  
 │           ├── score_extractor.py           
 │           └── data_loader.py               
-│
-├── utils/                                   
-│   ├── pgg_evaluator_enhanced.py           
-│   ├── pgg_rl_utils.py                      
-│   └── performance_metrics.py               
-│
-├── checkpoints/
-│   └── checkpoint.pt                        
 │
 └── requirements.txt                        
 ```
