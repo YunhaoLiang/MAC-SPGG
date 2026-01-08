@@ -192,7 +192,6 @@ The repository includes a inference checkpoint (3.0 MB) containing:
 - `agents['Agent_SMOLLM2']['policy_net']`: Policy network for SmolLM2  
 - `agents['Agent_Qwen']['policy_net']`: Policy network for Qwen
 
-
 ---
 
 ## Observation Modes

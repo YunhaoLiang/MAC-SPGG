@@ -355,6 +355,8 @@ def run_gsm8k_full_observation(
 def main():
     """Main entry point for GSM8K SPGG evaluation with full observation."""
     # Checkpoint path (relative to SPGG root)
+    # This checkpoint was trained under PO protocol.
+    # Using it here for Full Observation is an ablation/generalization test to evaluate the checkpoint's transferability across different information settings.
     checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
