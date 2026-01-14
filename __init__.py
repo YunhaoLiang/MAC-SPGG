@@ -8,4 +8,5 @@ using game-theoretic mechanisms.
 __version__ = "1.0.0"
 __author__ = "Yunhao Liang, Yuan Qu, Jingyuan Yang, Shaochong Lin, Max Shen"
 
-from .training.config import SPGGConfig, LoRAPPOConfig, AGENT_CONFIGS
+# Note: This is the project root directory, not a Python package.
+# The main package is located in the spgg/ subdirectory.

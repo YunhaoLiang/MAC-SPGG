@@ -15,17 +15,14 @@ import time
 import json
 import logging
 
-# Add parent directory to path for imports (local/core)
-LOCAL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, LOCAL_ROOT)
-
-# SPGG root for checkpoint access
-# test/ -> local/ -> evaluation/ -> SPGG/
-SPGG_ROOT = os.path.dirname(os.path.dirname(LOCAL_ROOT))
+# Add SPGG root directory to path for imports
+# test/ -> local/ -> evaluation/ -> spgg/ -> SPGG/
+SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, SPGG_ROOT)
 
 from huggingface_hub import login
 
-from core import (
+from spgg.evaluation.local.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
@@ -324,7 +321,7 @@ def main():
     # Checkpoint path (relative to SPGG root)
     # This checkpoint was trained under PO protocol.
     # Using it here for Full Observation is an ablation/generalization test to evaluate the checkpoint's transferability across different information settings.
-    checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
+    checkpoint_path = os.path.join(SPGG_ROOT, "spgg", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")

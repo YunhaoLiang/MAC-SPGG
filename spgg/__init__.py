@@ -1,36 +1,14 @@
 """
-SPGG: Sequential Public Goods Game framework.
+Source package for MAC-SPGG framework.
 
-Main package for multi-agent collaborative reasoning.
+Contains core modules, checkpoints, and utilities.
 """
 
-# Import from API core (for backward compatibility)
-from .api.core import (
-    PolicyNetwork,
-    ValueNetwork,
-    MathStateEncoder,
-    SPGGConfig,
-    parse_generation_params,
-    load_checkpoint_params,
-    load_gsm8k_samples,
-    safe_for_json,
-    save_results,
-    APIModelManager,
-    MathProblemPool,
-    MathAgent,
-)
+__version__ = "0.1.0"
 
-__all__ = [
-    'PolicyNetwork',
-    'ValueNetwork',
-    'MathStateEncoder',
-    'SPGGConfig',
-    'parse_generation_params',
-    'load_checkpoint_params',
-    'load_gsm8k_samples',
-    'safe_for_json',
-    'save_results',
-    'APIModelManager',
-    'MathProblemPool',
-    'MathAgent',
-]
+# Note: Import specific modules as needed in your scripts.
+# Example:
+#   from spgg.evaluation.api.core import APIModelManager
+#   from spgg.evaluation.local.core import LocalModelManager
+
+__all__ = []

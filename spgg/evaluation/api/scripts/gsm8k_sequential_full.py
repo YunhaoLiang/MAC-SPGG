@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-GSM8K Evaluation with SPGG Framework - Partial Observation Mode.
+GSM8K Evaluation with SPGG Framework - Full Observation Mode.
 
 This script evaluates the Sequential Public Goods Game (SPGG) framework
-on the GSM8K mathematical reasoning benchmark. It implements the partial
-observation mode where each agent can only see the immediately preceding
-agent's solution, combined with the no-integrator mode where the final
-agent's answer serves as the group answer.
+on the GSM8K mathematical reasoning benchmark. It implements the full
+observation mode where each agent can see ALL previous agents' solutions,
+combined with the no-integrator mode where the final agent's answer
+serves as the group answer.
 
 Agent sequence: Llama -> SmolLM2 -> Qwen
 
@@ -20,12 +20,13 @@ import json
 import logging
 
 # Add SPGG root directory to path for imports
-SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# scripts/ -> api/ -> evaluation/ -> spgg/ -> SPGG/
+SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 sys.path.insert(0, SPGG_ROOT)
 
 from huggingface_hub import login
 
-from spgg.api.core import (
+from spgg.evaluation.api.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
@@ -64,18 +65,156 @@ class MockSPGGModule:
 sys.modules['spgg_multi_agent_trainer'] = MockSPGGModule
 
 
-def run_gsm8k_partial_observation(
+class FullObservationMathAgent(MathAgent):
+    """
+    Math agent for full observation mode.
+    
+    In full observation mode, each agent can see ALL previous agents'
+    solutions, not just the immediately preceding one.
+    """
+    
+    def generate_solution(
+        self,
+        problem: str,
+        all_previous_solutions: list = None,
+        position: int = 0,
+        problem_index: int = 0,
+        is_last_agent: bool = False
+    ) -> str:
+        """
+        Generate a solution with full observation of all previous solutions.
+        
+        Args:
+            problem: The mathematical problem text.
+            all_previous_solutions: List of all previous agents' solutions.
+            position: Position in the sequential game.
+            problem_index: Index of current problem.
+            is_last_agent: Whether this is the final agent in the sequence.
+        
+        Returns:
+            Generated solution text.
+        """
+        prompt = self._build_full_obs_prompt(problem, all_previous_solutions, is_last_agent)
+        messages = [
+            {"role": "system", "content": self._get_full_obs_system_prompt()},
+            {"role": "user", "content": prompt}
+        ]
+        
+        previous_solution_texts = [sol["solution"] for sol in all_previous_solutions] if all_previous_solutions else []
+        
+        try:
+            if self.model_type == "together":
+                return self.api_manager.call_together_api(
+                    "meta-llama/Llama-3.1-8B-Instruct-Turbo",
+                    messages,
+                    agent_id=self.agent_id,
+                    math_problem=problem,
+                    position=position,
+                    previous_solutions=previous_solution_texts,
+                    problem_index=problem_index
+                )
+            elif self.model_type == "qwen":
+                return self.api_manager.call_qwen_api(
+                    messages,
+                    agent_id=self.agent_id,
+                    math_problem=problem,
+                    position=position,
+                    previous_solutions=previous_solution_texts,
+                    problem_index=problem_index
+                )
+            elif self.model_type == "local":
+                return self.api_manager.generate_local_response(
+                    "SMOLLM2",
+                    messages,
+                    agent_id=self.agent_id,
+                    math_problem=problem,
+                    position=position,
+                    previous_solutions=previous_solution_texts,
+                    problem_index=problem_index
+                )
+            else:
+                return ""
+        except Exception as e:
+            print(f"{self.agent_id} solution generation failed: {e}")
+            return ""
+    
+    def _build_full_obs_prompt(
+        self,
+        problem: str,
+        all_previous_solutions: list = None,
+        is_last_agent: bool = False
+    ) -> str:
+        """Build the prompt for full observation mode."""
+        if is_last_agent:
+            if all_previous_solutions:
+                previous_content = ""
+                for sol in all_previous_solutions:
+                    previous_content += f"--- Solution from {sol['agent_id']} ---\n"
+                    previous_content += f"{sol['solution']}\n"
+                    previous_content += f"Extracted answer: {sol['extracted_answer']}\n\n"
+                
+                return f"""Question: {problem}
+
+Previous agents' solutions:
+{previous_content}
+
+You are the FINAL agent in this Full Observation + No Integrator setup. Your answer will be the FINAL answer.
+You can see ALL previous agents' solutions and their reasoning.
+
+Instructions:
+1. Analyze ALL previous solutions carefully
+2. Compare their approaches and identify any errors
+3. Provide your own independent solution
+4. Give your final answer that will be used as the group's answer
+
+Give your final answer in the format "The answer is [number]"."""
+            else:
+                return f"""Question: {problem}
+
+You are the FINAL agent. Solve this step by step and provide your final answer.
+Give your final answer in the format "The answer is [number]"."""
+        else:
+            if all_previous_solutions:
+                previous_content = ""
+                for sol in all_previous_solutions:
+                    previous_content += f"--- Solution from {sol['agent_id']} ---\n"
+                    previous_content += f"{sol['solution']}\n"
+                    previous_content += f"Extracted answer: {sol['extracted_answer']}\n\n"
+                
+                return f"""Question: {problem}
+
+Previous agents' solutions:
+{previous_content}
+
+You can see ALL previous agents' solutions above. Please provide your own independent analysis and solution.
+Consider the previous approaches but think critically and provide your own reasoning.
+
+Give your final answer in the format "The answer is [number]"."""
+            else:
+                return f"""Question: {problem}
+
+Please solve this step by step and provide your final answer in the format "The answer is [number]"."""
+    
+    def _get_full_obs_system_prompt(self) -> str:
+        """Get the system prompt for full observation mode."""
+        return f"""You are {self.agent_id}, participating in a math problem Public Goods Game (Full Observation + No Integrator Mode).
+
+In this mode:
+- You can see ALL previous agents' complete solutions (Full Observation)
+- The last agent's answer becomes the final group answer (No Integrator)
+- All participants share the same reward based on the final answer's correctness
+
+Solve the problem independently and accurately, providing precise reasoning and a clear final answer. Always conclude your response with "The answer is [number]"."""
+
+
+def run_gsm8k_full_observation(
     problem: dict,
     api_manager: APIModelManager,
     verbose: bool = True,
     problem_index: int = 0
 ) -> dict:
     """
-    Run SPGG evaluation on a single GSM8K problem.
-    
-    Executes the sequential public goods game with partial observation,
-    where each agent sees only the previous agent's solution. The final
-    agent (Qwen) provides the group's answer.
+    Run SPGG evaluation on a single GSM8K problem with full observation.
     
     Args:
         problem: Dictionary containing 'question' and 'answer' keys.
@@ -84,22 +223,11 @@ def run_gsm8k_partial_observation(
         problem_index: Index of the current problem.
     
     Returns:
-        Dictionary containing:
-            - question: The original problem text.
-            - correct_answer: Ground truth answer.
-            - extracted_answer: Extracted answer from final solution.
-            - is_correct: Boolean indicating correctness.
-            - individual_solutions: Dict mapping agent IDs to solutions.
-            - final_solution: The final agent's solution.
-            - failed_agents: List of agents that failed to generate.
-            - mode: Evaluation mode identifier.
-            - agent_models: Model specifications for each agent.
-            - summary: Summary statistics.
+        Dictionary containing evaluation results.
     """
     question = problem['question']
     correct_answer = problem['answer']
     
-    # Show detailed output for first few problems
     show_detailed = problem_index < 3
     
     if show_detailed:
@@ -113,18 +241,15 @@ def run_gsm8k_partial_observation(
         print(f"Problem {problem_index + 1}: {question[:50]}...")
         print(f"Correct Answer: {correct_answer}")
     
-    # Initialize problem pool
     math_pool = MathProblemPool()
     math_pool.set_correct_answer(correct_answer)
     
-    # Initialize agents: Llama -> SmolLM2 -> Qwen
     agents = [
-        MathAgent("Agent_Llama", "together", api_manager),
-        MathAgent("Agent_SMOLLM2", "local", api_manager),
-        MathAgent("Agent_Qwen", "qwen", api_manager)
+        FullObservationMathAgent("Agent_Llama", "together", api_manager),
+        FullObservationMathAgent("Agent_SMOLLM2", "local", api_manager),
+        FullObservationMathAgent("Agent_Qwen", "qwen", api_manager)
     ]
     
-    # Load local model
     if not api_manager.load_local_model("SMOLLM2"):
         print("Error: SmolLM2 model loading failed")
         return {
@@ -136,17 +261,13 @@ def run_gsm8k_partial_observation(
     
     all_solutions = []
     failed_agents = []
-    previous_solution = None
     
     for i, agent in enumerate(agents):
         is_last_agent = (i == len(agents) - 1)
         
         if show_detailed:
             print(f"\n{agent.agent_id} generating solution...")
-            if previous_solution:
-                print(f"   Visible solution: {previous_solution['agent_id']} (partial observation)")
-            else:
-                print(f"   Visible solution: None (first agent)")
+            print(f"   Visible solutions: {len(all_solutions)} (all previous agents)")
             if is_last_agent:
                 print(f"   This is the final agent - will provide group answer")
         else:
@@ -154,7 +275,7 @@ def run_gsm8k_partial_observation(
         
         solution = agent.generate_solution(
             question,
-            previous_solution,
+            all_solutions,
             position=i+1,
             problem_index=problem_index,
             is_last_agent=is_last_agent
@@ -178,9 +299,6 @@ def run_gsm8k_partial_observation(
             }
             all_solutions.append(current_solution)
             
-            # Partial observation: only pass current solution to next agent
-            previous_solution = current_solution
-            
             if show_detailed:
                 print(f"   Extracted answer: {extracted_answer}")
                 print(f"   Solution length: {len(solution)}")
@@ -190,13 +308,11 @@ def run_gsm8k_partial_observation(
             print(f"{agent.agent_id} failed to generate solution")
             failed_agents.append(agent.agent_id)
     
-    # No integrator mode: final answer from last successful agent
     final_solution = all_solutions[-1]["solution"] if all_solutions else ""
     final_answer_extracted = all_solutions[-1]["extracted_answer"] if all_solutions else "No answer found"
     
     math_pool.final_solution = final_solution
     
-    # Evaluate correctness
     is_correct = False
     try:
         extracted_num = float(re.sub(r'[^\d.]', '', final_answer_extracted))
@@ -221,7 +337,7 @@ def run_gsm8k_partial_observation(
         "individual_solutions": dict(math_pool.individual_solutions),
         "final_solution": final_solution,
         "failed_agents": failed_agents,
-        "mode": "partial_observation_no_integrator",
+        "mode": "full_observation_no_integrator",
         "agent_models": {
             "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
             "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
@@ -231,19 +347,16 @@ def run_gsm8k_partial_observation(
             "contributions_count": len(math_pool.individual_solutions),
             "final_solution_length": len(final_solution),
             "success": is_correct,
-            "mode": "partial_observation_no_integrator"
+            "mode": "full_observation_no_integrator"
         }
     }
 
 
 def main():
-    """
-    Main entry point for GSM8K SPGG evaluation.
-    
-    Loads the trained checkpoint, initializes the API manager with
-    dynamic parameter generators, and runs evaluation on all GSM8K problems.
-    """
+    """Main entry point for GSM8K SPGG evaluation with full observation."""
     # Checkpoint path (relative to SPGG root)
+    # This checkpoint was trained under PO protocol.
+    # Using it here for Full Observation is an ablation/generalization test to evaluate the checkpoint's transferability across different information settings.
     checkpoint_path = os.path.join(SPGG_ROOT, "spgg", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
@@ -252,11 +365,9 @@ def main():
     print(f"Loading checkpoint from: {checkpoint_path}")
     learned_params = load_checkpoint_params(checkpoint_path)
     
-    # Initialize API manager
     api_manager = APIModelManager()
     api_manager.set_dynamic_generators(learned_params)
     
-    # Load GSM8K data
     gsm8k_data_path = "/content/drive/MyDrive/PGG/GSM8K/Dataset/gsm8k_samples.json"
     
     if not os.path.exists(gsm8k_data_path):
@@ -269,13 +380,12 @@ def main():
         print("Error: Failed to load GSM8K data")
         return
     
-    # Run evaluation
     results = []
     total_correct = 0
     total_wrong = 0
     
     print(f"Starting evaluation on {len(gsm8k_samples)} GSM8K problems")
-    print(f"Mode: Partial Observation + No Integrator")
+    print(f"Mode: Full Observation + No Integrator")
     print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen")
     
     for idx, problem in enumerate(gsm8k_samples):
@@ -283,7 +393,7 @@ def main():
         print(f"Question: {problem['question'][:100]}...")
         
         try:
-            result = run_gsm8k_partial_observation(
+            result = run_gsm8k_full_observation(
                 problem, api_manager, verbose=True, problem_index=idx
             )
             results.append(result)
@@ -304,11 +414,9 @@ def main():
         print(f"Problem {idx + 1} completed")
         time.sleep(0.5)
     
-    # Compute statistics
     processed_problems = len(results)
     accuracy = total_correct / processed_problems if processed_problems else 0
     
-    # Clean parameters for JSON serialization
     clean_learned_params = {}
     for agent_id, params in learned_params.items():
         if isinstance(params, dict):
@@ -322,7 +430,6 @@ def main():
         else:
             clean_learned_params[agent_id] = str(params)
     
-    # Compile final results
     final_results = {
         "experiment_info": {
             "total_problems": len(gsm8k_samples),
@@ -330,33 +437,31 @@ def main():
             "correct_answers": total_correct,
             "wrong_answers": total_wrong,
             "accuracy": accuracy,
-            "mode": "partial_observation_no_integrator",
-            "observation_mode": "Each agent can see ONLY the previous agent's solution",
+            "mode": "full_observation_no_integrator",
+            "observation_mode": "Each agent can see ALL previous agents' solutions",
             "integrator_mode": "No Integrator - Final agent's answer is the group answer",
             "agent_sequence": "Llama -> SmolLM2 -> Qwen",
             "checkpoint_used": checkpoint_path if os.path.exists(checkpoint_path) else "default_params",
             "learned_parameters": clean_learned_params,
-            "environment": "Partial Observation + No Integrator - Mixed API/Local",
+            "environment": "Full Observation + No Integrator - Mixed API/Local",
             "model_details": {
-                "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct-Turbo (Together API)",
-                "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct (Local)",
-                "Agent_Qwen": "qwen3-8b (DashScope API)"
+                "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
+                "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+                "Agent_Qwen": "qwen3-8b"
             }
         },
         "results": results
     }
     
-    # Print summary
     print(f"\n===== Evaluation Results =====")
     print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen")
-    print(f"Observation Mode: Partial (each agent sees only previous agent's solution)")
+    print(f"Observation Mode: Full (each agent sees all previous agents' solutions)")
     print(f"Total Problems: {processed_problems}")
     print(f"Correct: {total_correct}")
     print(f"Wrong: {total_wrong}")
     print(f"Accuracy: {accuracy:.2%}")
     
-    # Save results
-    save_results([final_results], RESULT_DIR, "partial_obs_no_integrator")
+    save_results([final_results], RESULT_DIR, "full_obs_no_integrator")
     print(f"Results saved to {RESULT_DIR}")
 
 

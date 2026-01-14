@@ -74,34 +74,16 @@ The framework operates in two distinct phases:
 
 ```
 SPGG/
-├── spgg/                                    # Main package
-│   ├── api/                                 # API-based inference modules
-│   │   └── core/                            # API core components
-│   │       ├── agents.py                     # APIModelManager, agent implementations
-│   │       ├── config.py                            
-│   │       ├── networks.py                          
-│   │       ├── encoders.py                          
-│   │       └── utils.py                     # Parameter parsing, checkpoint loading
+├── src/                                     # Source code directory
+│   ├── core/                                # Core inference components
+│   │   ├── agents.py                        # APIModelManager, agent implementations
+│   │   ├── config.py                            
+│   │   ├── networks.py                          
+│   │   ├── encoders.py                          
+│   │   └── utils.py                         # Parameter parsing, checkpoint loading
 │   │
 │   ├── checkpoints/                         # Model checkpoints
-│   │   └── checkpoint.pt                    # Pre-trained policy networks
-│   │
-│   ├── evaluation/                          # Evaluation modules
-│   │   ├── api/                             # API-based evaluation scripts
-│   │   │   └── test/                        # API evaluation test scripts
-│   │   └── local/                           # Local model evaluation
-│   │       ├── core/                        # Local model inference modules
-│   │       │   ├── agents.py                # LocalModelManager
-│   │       │   ├── config.py
-│   │       │   ├── networks.py
-│   │       │   ├── encoders.py
-│   │       │   └── utils.py
-│   │       └── test/                        # Local evaluation test scripts
-│   │
-│   ├── training/                            # Training pipeline
-│   │   └── evaluators/                      # Evaluator model training
-│   │       ├── qwen2.5_evaluator_training.py    
-│   │       └── utils/                       
+│   │   └── checkpoint.pt                        
 │   │
 │   └── utils/                               # Utility modules
 │       ├── pgg_rl_utils.py                      
@@ -110,6 +92,28 @@ SPGG/
 ├── assets/                                  # Images and static resources
 │   ├── work_flow.png                            
 │   └── Workflow.png                             
+│
+├── evaluation/
+│   ├── evaluation_gsm8k/                    # API-based evaluation suite
+│   │   └── test/
+│   │       ├── gsm8k_sequential_partial.py  # Partial observation protocol
+│   │       └── gsm8k_sequential_full.py     # Full observation protocol
+│   │
+│   └── local/                               # Local model evaluation
+│       ├── core/                            
+│       └── test/
+│           ├── gsm8k_local_partial.py      
+│           └── gsm8k_local_full.py          
+│
+├── training/
+│   └── evaluators/                          # Evaluator model training pipeline
+│       ├── qwen2.5_evaluator_training.py    
+│       ├── summeval_data_cleaner_colab.py   
+│       └── utils/
+│           ├── common.py                   
+│           ├── prompts.py                  
+│           ├── score_extractor.py           
+│           └── data_loader.py               
 │
 └── requirements.txt                        
 ```
@@ -157,32 +161,36 @@ HUGGINGFACE_TOKEN=your_hf_token              # Model downloads
 
 **Partial Observation Mode** (Primary usage):
 ```bash
-python spgg/evaluation/local/test/gsm8k_local_partial.py
+cd spgg/evaluation/local/test
+python gsm8k_local_partial.py
 ```
 
-**Full Observation Mode** (Ablation test):
+**Full Observation Mode**:
 ```bash
-python spgg/evaluation/local/test/gsm8k_local_full.py
+cd spgg/evaluation/local/test
+python gsm8k_local_full.py
+```
+
+
+### API-Based Evaluation (Alternative)
+
+
+```bash
+# Partial observation with API models
+cd spgg/evaluation/api/scripts
+python gsm8k_sequential_partial.py
+
+# Full observation with API models
+cd spgg/evaluation/api/scripts
+python gsm8k_sequential_full.py
 ```
 
 **Note**: Requires sufficient GPU memory to load all three models simultaneously (recommend 30GB+ VRAM).
 
-### API-Based Evaluation (Alternative)
-
-If you prefer using API services instead of local models:
-
-```bash
-# Partial observation with API models
-python spgg/evaluation/api/test/gsm8k_sequential_partial.py
-
-# Full observation with API models
-python spgg/evaluation/api/test/gsm8k_sequential_full.py
-```
-
 ### Evaluator Training
 
 ```bash
-cd spgg/training/evaluators
+cd training/evaluators
 # Update paths in qwen2.5_evaluator_training.py
 python qwen2.5_evaluator_training.py
 ```
@@ -190,17 +198,12 @@ python qwen2.5_evaluator_training.py
 
 ## Checkpoints
 
-The repository includes an inference checkpoint (`spgg/checkpoints/checkpoint.pt`, 3.0 MB) containing:
+The repository includes a inference checkpoint (3.0 MB) containing:
 
 - `config`: Training configuration and hyperparameters
 - `agents['Agent_Llama']['policy_net']`: Policy network for Llama
 - `agents['Agent_SMOLLM2']['policy_net']`: Policy network for SmolLM2  
 - `agents['Agent_Qwen']['policy_net']`: Policy network for Qwen
-
-**Important Notes:**
-- This checkpoint does not include any base LLM weights. Base models must be obtained from their original providers.
-- The released checkpoint was trained under the Partial Observation protocol.
-- Full Observation evaluation scripts use the same checkpoint as an ablation/generalization test.
 
 ---
 
