@@ -74,48 +74,55 @@ The framework operates in two distinct phases:
 
 ```
 SPGG/
-├── src/                                     # Source code directory
-│   ├── core/                                # Core inference components
-│   │   ├── agents.py                        # APIModelManager, agent implementations
-│   │   ├── config.py                            
-│   │   ├── networks.py                          
-│   │   ├── encoders.py                          
-│   │   └── utils.py                         # Parameter parsing, checkpoint loading
-│   │
+├── spgg/                                    # Main source package
 │   ├── checkpoints/                         # Model checkpoints
-│   │   └── checkpoint.pt                        
+│   │   └── checkpoint.pt                   # Policy network weights (3.0 MB)
 │   │
-│   └── utils/                               # Utility modules
-│       ├── pgg_rl_utils.py                      
-│       └── performance_metrics.py               
+│   ├── evaluation/                          # Evaluation modules
+│   │   ├── api/                            # API-based evaluation
+│   │   │   ├── core/                       # Core components for API models
+│   │   │   │   ├── agents.py              # APIModelManager, agent implementations
+│   │   │   │   ├── config.py              # Configuration
+│   │   │   │   ├── encoders.py            # State encoders
+│   │   │   │   ├── networks.py            # Policy/Value networks
+│   │   │   │   └── utils.py               # Utilities
+│   │   │   │
+│   │   │   └── scripts/                    # API evaluation scripts
+│   │   │       ├── gsm8k_sequential_partial.py
+│   │   │       └── gsm8k_sequential_full.py
+│   │   │
+│   │   └── local/                          # Local model evaluation (Recommended)
+│   │       ├── core/                       # Core components for local models
+│   │       │   ├── agents.py              # LocalModelManager, agent implementations
+│   │       │   ├── config.py              
+│   │       │   ├── encoders.py            
+│   │       │   ├── networks.py            
+│   │       │   └── utils.py               
+│   │       │
+│   │       └── test/                       # Local evaluation scripts
+│   │           ├── gsm8k_local_partial.py
+│   │           └── gsm8k_local_full.py
+│   │
+│   ├── training/                            # Training pipeline
+│   │   └── evaluators/                     # Evaluator model training
+│   │       ├── qwen2.5_evaluator_training.py
+│   │       ├── summeval_data_cleaner_colab.py
+│   │       └── utils/
+│   │           ├── common.py              
+│   │           ├── data_loader.py         
+│   │           ├── prompts.py             
+│   │           └── score_extractor.py     
+│   │
+│   └── utils/                               # General utilities
+│       ├── pgg_rl_utils.py                 
+│       └── performance_metrics.py          
 │
 ├── assets/                                  # Images and static resources
-│   ├── work_flow.png                            
-│   └── Workflow.png                             
+│   ├── work_flow.png                       
+│   └── Workflow.png                        
 │
-├── evaluation/
-│   ├── evaluation_gsm8k/                    # API-based evaluation suite
-│   │   └── test/
-│   │       ├── gsm8k_sequential_partial.py  # Partial observation protocol
-│   │       └── gsm8k_sequential_full.py     # Full observation protocol
-│   │
-│   └── local/                               # Local model evaluation
-│       ├── core/                            
-│       └── test/
-│           ├── gsm8k_local_partial.py      
-│           └── gsm8k_local_full.py          
-│
-├── training/
-│   └── evaluators/                          # Evaluator model training pipeline
-│       ├── qwen2.5_evaluator_training.py    
-│       ├── summeval_data_cleaner_colab.py   
-│       └── utils/
-│           ├── common.py                   
-│           ├── prompts.py                  
-│           ├── score_extractor.py           
-│           └── data_loader.py               
-│
-└── requirements.txt                        
+├── requirements.txt                         # Python dependencies
+└── README.md                                # Documentation
 ```
 
 ---
