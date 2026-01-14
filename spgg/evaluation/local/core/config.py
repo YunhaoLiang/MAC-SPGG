@@ -18,8 +18,8 @@ class SPGGConfig:
     top_p_max: float = 0.95
     top_k_min: int = 20
     top_k_max: int = 80
-    max_tokens_min: int = 100
-    max_tokens_max: int = 1024
+    max_tokens_min: int = 700
+    max_tokens_max: int = 2048
     repetition_penalty_min: float = 1.0
     repetition_penalty_max: float = 1.3
     presence_penalty_min: float = 0.0

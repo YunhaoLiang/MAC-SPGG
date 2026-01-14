@@ -90,7 +90,8 @@ def load_checkpoint_params(checkpoint_path: str) -> Dict[str, Dict]:
     checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
     print(f"Checkpoint loaded, rebuilding policy networks...")
     
-    config = checkpoint.get('config')
+    # Use current SPGGConfig instead of checkpoint's old config
+    config = SPGGConfig()
     checkpoint_agents = checkpoint.get('agents', {})
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     state_encoder = MathStateEncoder()

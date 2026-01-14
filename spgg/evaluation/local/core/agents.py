@@ -33,7 +33,7 @@ MODEL_CONFIGS = {
     "QWEN": {
         "name": "Qwen/Qwen3-8B",
         "torch_dtype": torch.float16,
-        "max_tokens_default": 1024,
+        "max_tokens_default": 2048,  # Increased for thinking mode
     }
 }
 
@@ -184,10 +184,6 @@ class LocalModelManager:
                 raw_params = policy_network(state).squeeze(0)
                 dynamic_params = parse_generation_params(raw_params, config, agent_id)
             
-            if problem_index < 5:
-                print(f"{agent_id} dynamic params: temp={dynamic_params['temperature']:.3f}, "
-                      f"top_p={dynamic_params['top_p']:.3f}, max_tokens={dynamic_params['max_tokens']}")
-            
             return dynamic_params
             
         except Exception as e:
@@ -250,47 +246,73 @@ class LocalModelManager:
             )
             
             # Apply chat template
+            # Enable thinking mode for Qwen models
+            enable_thinking = (model_key == "QWEN")
             try:
-                input_text = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True
-                )
+                if enable_thinking:
+                    # For Qwen models, enable thinking mode in chat template
+                    input_text = tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True,
+                        enable_thinking=True
+                    )
+                else:
+                    input_text = tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True
+                    )
             except Exception:
-                input_text = f"User: {messages[-1]['content']}\nAssistant:"
+                # Fallback if enable_thinking parameter not supported
+                try:
+                    input_text = tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True
+                    )
+                except Exception:
+                    input_text = f"User: {messages[-1]['content']}\nAssistant:"
             
             inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
             
             # Generate
+            # Note: enable_thinking is handled in apply_chat_template, not in model.generate()
+            generation_kwargs = {
+                "max_new_tokens": dynamic_params.get('max_tokens', 512),
+                "temperature": max(dynamic_params.get('temperature', 0.7), 0.01),
+                "top_p": dynamic_params.get('top_p', 0.9),
+                "top_k": dynamic_params.get('top_k', 50),
+                "repetition_penalty": dynamic_params.get('repetition_penalty', 1.1),
+                "do_sample": True,
+                "pad_token_id": tokenizer.pad_token_id,
+                "eos_token_id": tokenizer.eos_token_id,
+            }
+            
             with torch.no_grad():
                 outputs = model.generate(
                     **inputs,
-                    max_new_tokens=dynamic_params.get('max_tokens', 512),
-                    temperature=max(dynamic_params.get('temperature', 0.7), 0.01),
-                    top_p=dynamic_params.get('top_p', 0.9),
-                    top_k=dynamic_params.get('top_k', 50),
-                    repetition_penalty=dynamic_params.get('repetition_penalty', 1.1),
-                    do_sample=True,
-                    pad_token_id=tokenizer.pad_token_id,
-                    eos_token_id=tokenizer.eos_token_id,
+                    **generation_kwargs
                 )
             
             response = tokenizer.decode(
                 outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True
             )
+            
             return response.strip()
             
         except torch.cuda.OutOfMemoryError:
             print(f"Warning: GPU OOM for {agent_id}, trying with reduced tokens")
             try:
                 torch.cuda.empty_cache()
+                fallback_kwargs = {
+                    "max_new_tokens": 512,
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "do_sample": True,
+                    "pad_token_id": tokenizer.pad_token_id,
+                    "eos_token_id": tokenizer.eos_token_id,
+                }
+                # Note: enable_thinking is already handled in apply_chat_template above
+                
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
-                        max_new_tokens=256,
-                        temperature=0.7,
-                        top_p=0.9,
-                        do_sample=True,
-                        pad_token_id=tokenizer.pad_token_id,
-                        eos_token_id=tokenizer.eos_token_id,
+                        **fallback_kwargs
                     )
                 response = tokenizer.decode(
                     outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True

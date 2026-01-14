@@ -102,11 +102,6 @@ class APIModelManager:
                 raw_params = policy_network(state).squeeze(0)
                 dynamic_params = parse_generation_params(raw_params, config, agent_id)
             
-            # Log dynamic parameters for first few problems
-            if problem_index < 5:
-                print(f"{agent_id} dynamic params: temp={dynamic_params['temperature']:.3f}, "
-                      f"top_p={dynamic_params['top_p']:.3f}, max_tokens={dynamic_params['max_tokens']}")
-            
             return dynamic_params
             
         except Exception as e:
