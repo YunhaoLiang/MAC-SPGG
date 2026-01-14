@@ -107,16 +107,6 @@ SPGG/
 │       ├── pgg_rl_utils.py                      
 │       └── performance_metrics.py               
 │
-├── examples/                                # Example scripts (primary usage)
-│   ├── gsm8k_local_partial.py               # Local models + Partial observation (main)
-│   ├── gsm8k_local_full.py                  # Local models + Full observation
-│   ├── api/                                 # API-based alternatives
-│   │   ├── gsm8k_api_partial.py             # API models + Partial observation
-│   │   └── gsm8k_api_full.py                # API models + Full observation
-│   ├── notebooks/                           # Jupyter notebooks
-│   │   └── gsm8k_demo.ipynb                 
-│   └── README.md                            # Examples documentation
-│
 ├── assets/                                  # Images and static resources
 │   ├── work_flow.png                            
 │   └── Workflow.png                             
@@ -167,12 +157,12 @@ HUGGINGFACE_TOKEN=your_hf_token              # Model downloads
 
 **Partial Observation Mode** (Primary usage):
 ```bash
-python examples/gsm8k_local_partial.py
+python spgg/evaluation/local/test/gsm8k_local_partial.py
 ```
 
 **Full Observation Mode** (Ablation test):
 ```bash
-python examples/gsm8k_local_full.py
+python spgg/evaluation/local/test/gsm8k_local_full.py
 ```
 
 **Note**: Requires sufficient GPU memory to load all three models simultaneously (recommend 30GB+ VRAM).
@@ -183,10 +173,10 @@ If you prefer using API services instead of local models:
 
 ```bash
 # Partial observation with API models
-python examples/api/gsm8k_api_partial.py
+python spgg/evaluation/api/test/gsm8k_sequential_partial.py
 
 # Full observation with API models
-python examples/api/gsm8k_api_full.py
+python spgg/evaluation/api/test/gsm8k_sequential_full.py
 ```
 
 ### Evaluator Training

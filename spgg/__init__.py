@@ -1,10 +1,11 @@
 """
-Source package for MAC-SPGG framework.
+SPGG: Sequential Public Goods Game framework.
 
-Contains core modules, checkpoints, and utilities.
+Main package for multi-agent collaborative reasoning.
 """
 
-from .core import (
+# Import from API core (for backward compatibility)
+from .api.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
