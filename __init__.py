@@ -6,6 +6,6 @@ using game-theoretic mechanisms.
 """
 
 __version__ = "1.0.0"
-__author__ = "SPGG Research Team"
+__author__ = "Yunhao Liang, Yuan Qu, Jingyuan Yang, Shaochong Lin, Max Shen"
 
 from .training.config import SPGGConfig, LoRAPPOConfig, AGENT_CONFIGS

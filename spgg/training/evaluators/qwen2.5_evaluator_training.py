@@ -53,10 +53,11 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 # HuggingFace authentication
 hf_token = os.environ.get("HUGGINGFACE_TOKEN")
 if hf_token:
-try:
+
+    try:
         login(hf_token)
-except Exception:
-    pass
+    except Exception:
+        pass
 
 
 # Model and training configuration
@@ -116,7 +117,7 @@ def create_evaluator_dataset(examples, tokenizer):
     
     # Create labels with score-only supervision
     labels = []
-        score_patterns = [
+    score_patterns = [
             r"Relevance: (\d+(?:\.\d+)?)",
             r"Coherence: (\d+(?:\.\d+)?)", 
             r"Consistency: (\d+(?:\.\d+)?)",
@@ -351,7 +352,7 @@ def test_evaluator_model(model, tokenizer, test_samples):
                     pred = predicted_rewards[dim]
                 true = true_rewards[dim]
                 error = abs(pred - true)
-                    print(f"  {dim}: pred={pred:.2f}, true={true:.2f}, error={error:.2f}")
+                print(f"  {dim}: pred={pred:.2f}, true={true:.2f}, error={error:.2f}")
                 all_predictions.append(pred)
                 all_true_scores.append(true)
                     

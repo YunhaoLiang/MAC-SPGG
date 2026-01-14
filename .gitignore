@@ -49,12 +49,12 @@ Thumbs.db
 
 # Model checkpoints and data
 *.pt
-!src/checkpoints/checkpoint.pt
+!spgg/checkpoints/checkpoint.pt
 *.pth
 *.bin
 *.ckpt
-src/checkpoints/*
-!src/checkpoints/checkpoint.pt
+spgg/checkpoints/*
+!spgg/checkpoints/checkpoint.pt
 data/
 datasets/
 *.json

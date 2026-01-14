@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 """
-GSM8K Evaluation with SPGG Framework - Partial Observation Mode.
+GSM8K Evaluation with SPGG Framework - Local Models Only (Partial Observation).
 
-This script evaluates the Sequential Public Goods Game (SPGG) framework
-on the GSM8K mathematical reasoning benchmark. It implements the partial
-observation mode where each agent can only see the immediately preceding
-agent's solution, combined with the no-integrator mode where the final
-agent's answer serves as the group answer.
+All models run locally without any API calls.
+Agent sequence: Llama -> SmolLM2 -> Qwen (all local)
 
-Agent sequence: Llama -> SmolLM2 -> Qwen
-
+Partial observation mode: each agent can only see the immediately preceding
+agent's solution.
 """
 
 import os
@@ -19,14 +16,14 @@ import time
 import json
 import logging
 
-# Add SPGG root directory to path for imports
-# test/ -> evaluation_gsm8k/ -> evaluation/ -> SPGG/
-SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Add parent directory to path for imports
+SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SPGG_ROOT)
 
 from huggingface_hub import login
 
-from src.core import (
+# Import from local core modules
+from spgg.evaluation.local.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
@@ -36,7 +33,7 @@ from src.core import (
     load_gsm8k_samples,
     safe_for_json,
     save_results,
-    APIModelManager,
+    LocalModelManager,
     MathProblemPool,
     MathAgent,
 )
@@ -53,7 +50,7 @@ except Exception:
     pass
 
 # Result directory
-RESULT_DIR = "/content/drive/MyDrive/PGG/GSM8K"
+RESULT_DIR = "/content/drive/MyDrive/PGG/GSM8K/local"
 os.makedirs(RESULT_DIR, exist_ok=True)
 
 
@@ -67,40 +64,25 @@ sys.modules['spgg_multi_agent_trainer'] = MockSPGGModule
 
 def run_gsm8k_partial_observation(
     problem: dict,
-    api_manager: APIModelManager,
+    model_manager: LocalModelManager,
     verbose: bool = True,
     problem_index: int = 0
 ) -> dict:
     """
-    Run SPGG evaluation on a single GSM8K problem.
-    
-    Executes the sequential public goods game with partial observation,
-    where each agent sees only the previous agent's solution. The final
-    agent (Qwen) provides the group's answer.
+    Run SPGG evaluation on a single GSM8K problem with partial observation.
     
     Args:
         problem: Dictionary containing 'question' and 'answer' keys.
-        api_manager: APIModelManager instance for LLM calls.
+        model_manager: LocalModelManager instance for model calls.
         verbose: Whether to print detailed progress information.
         problem_index: Index of the current problem.
     
     Returns:
-        Dictionary containing:
-            - question: The original problem text.
-            - correct_answer: Ground truth answer.
-            - extracted_answer: Extracted answer from final solution.
-            - is_correct: Boolean indicating correctness.
-            - individual_solutions: Dict mapping agent IDs to solutions.
-            - final_solution: The final agent's solution.
-            - failed_agents: List of agents that failed to generate.
-            - mode: Evaluation mode identifier.
-            - agent_models: Model specifications for each agent.
-            - summary: Summary statistics.
+        Dictionary containing evaluation results.
     """
     question = problem['question']
     correct_answer = problem['answer']
     
-    # Show detailed output for first few problems
     show_detailed = problem_index < 3
     
     if show_detailed:
@@ -114,26 +96,17 @@ def run_gsm8k_partial_observation(
         print(f"Problem {problem_index + 1}: {question[:50]}...")
         print(f"Correct Answer: {correct_answer}")
     
-    # Initialize problem pool
     math_pool = MathProblemPool()
     math_pool.set_correct_answer(correct_answer)
     
-    # Initialize agents: Llama -> SmolLM2 -> Qwen
+    # Initialize agents: Llama -> SmolLM2 -> Qwen (all local)
     agents = [
-        MathAgent("Agent_Llama", "together", api_manager),
-        MathAgent("Agent_SMOLLM2", "local", api_manager),
-        MathAgent("Agent_Qwen", "qwen", api_manager)
+        MathAgent("Agent_Llama", model_manager),
+        MathAgent("Agent_SMOLLM2", model_manager),
+        MathAgent("Agent_Qwen", model_manager)
     ]
     
-    # Load local model
-    if not api_manager.load_local_model("SMOLLM2"):
-        print("Error: SmolLM2 model loading failed")
-        return {
-            "question": question,
-            "error": "SmolLM2 model loading failed"
-        }
-    
-    print("Agent configuration: Llama -> SmolLM2 -> Qwen")
+    print("Agent configuration: Llama -> SmolLM2 -> Qwen (all local)")
     
     all_solutions = []
     failed_agents = []
@@ -164,7 +137,7 @@ def run_gsm8k_partial_observation(
         if solution:
             if show_detailed:
                 print(f"{agent.agent_id} completed")
-                print(f"   Response: {solution}")
+                print(f"   Response: {solution[:200]}...")
             else:
                 print(f"{agent.agent_id} completed, response length: {len(solution)}")
             
@@ -184,7 +157,6 @@ def run_gsm8k_partial_observation(
             
             if show_detailed:
                 print(f"   Extracted answer: {extracted_answer}")
-                print(f"   Solution length: {len(solution)}")
             else:
                 print(f"{agent.agent_id} extracted answer: {extracted_answer}")
         else:
@@ -222,30 +194,25 @@ def run_gsm8k_partial_observation(
         "individual_solutions": dict(math_pool.individual_solutions),
         "final_solution": final_solution,
         "failed_agents": failed_agents,
-        "mode": "partial_observation_no_integrator",
+        "mode": "local_partial_observation_no_integrator",
         "agent_models": {
-            "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct-Turbo",
-            "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
-            "Agent_Qwen": "qwen3-8b"
+            "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct (local)",
+            "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct (local)",
+            "Agent_Qwen": "Qwen/Qwen3-8B (local)"
         },
         "summary": {
             "contributions_count": len(math_pool.individual_solutions),
             "final_solution_length": len(final_solution),
             "success": is_correct,
-            "mode": "partial_observation_no_integrator"
+            "mode": "local_partial_observation_no_integrator"
         }
     }
 
 
 def main():
-    """
-    Main entry point for GSM8K SPGG evaluation.
-    
-    Loads the trained checkpoint, initializes the API manager with
-    dynamic parameter generators, and runs evaluation on all GSM8K problems.
-    """
+    """Main entry point for local GSM8K SPGG evaluation."""
     # Checkpoint path (relative to SPGG root)
-    checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
+    checkpoint_path = os.path.join(SPGG_ROOT, "spgg", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
@@ -253,9 +220,14 @@ def main():
     print(f"Loading checkpoint from: {checkpoint_path}")
     learned_params = load_checkpoint_params(checkpoint_path)
     
-    # Initialize API manager
-    api_manager = APIModelManager()
-    api_manager.set_dynamic_generators(learned_params)
+    # Initialize local model manager
+    model_manager = LocalModelManager()
+    model_manager.set_dynamic_generators(learned_params)
+    
+    # Pre-load all models
+    print("Pre-loading all local models...")
+    if not model_manager.load_all_models():
+        print("Warning: Some models failed to load")
     
     # Load GSM8K data
     gsm8k_data_path = "/content/drive/MyDrive/PGG/GSM8K/Dataset/gsm8k_samples.json"
@@ -276,8 +248,8 @@ def main():
     total_wrong = 0
     
     print(f"Starting evaluation on {len(gsm8k_samples)} GSM8K problems")
-    print(f"Mode: Partial Observation + No Integrator")
-    print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen")
+    print(f"Mode: Local Models + Partial Observation + No Integrator")
+    print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen (all local)")
     
     for idx, problem in enumerate(gsm8k_samples):
         print(f"\nProcessing problem {idx + 1}...")
@@ -285,7 +257,7 @@ def main():
         
         try:
             result = run_gsm8k_partial_observation(
-                problem, api_manager, verbose=True, problem_index=idx
+                problem, model_manager, verbose=True, problem_index=idx
             )
             results.append(result)
             
@@ -303,7 +275,6 @@ def main():
             total_wrong += 1
         
         print(f"Problem {idx + 1} completed")
-        time.sleep(0.5)
     
     # Compute statistics
     processed_problems = len(results)
@@ -331,17 +302,17 @@ def main():
             "correct_answers": total_correct,
             "wrong_answers": total_wrong,
             "accuracy": accuracy,
-            "mode": "partial_observation_no_integrator",
+            "mode": "local_partial_observation_no_integrator",
             "observation_mode": "Each agent can see ONLY the previous agent's solution",
             "integrator_mode": "No Integrator - Final agent's answer is the group answer",
-            "agent_sequence": "Llama -> SmolLM2 -> Qwen",
-            "checkpoint_used": checkpoint_path if os.path.exists(checkpoint_path) else "default_params",
+            "agent_sequence": "Llama -> SmolLM2 -> Qwen (all local)",
+            "checkpoint_used": checkpoint_path,
             "learned_parameters": clean_learned_params,
-            "environment": "Partial Observation + No Integrator - Mixed API/Local",
+            "environment": "All Local Models - No API",
             "model_details": {
-                "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct-Turbo (Together API)",
-                "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct (Local)",
-                "Agent_Qwen": "qwen3-8b (DashScope API)"
+                "Agent_Llama": "meta-llama/Llama-3.1-8B-Instruct (local)",
+                "Agent_SMOLLM2": "HuggingFaceTB/SmolLM2-1.7B-Instruct (local)",
+                "Agent_Qwen": "Qwen/Qwen3-8B (local)"
             }
         },
         "results": results
@@ -349,7 +320,7 @@ def main():
     
     # Print summary
     print(f"\n===== Evaluation Results =====")
-    print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen")
+    print(f"Agent Sequence: Llama -> SmolLM2 -> Qwen (all local)")
     print(f"Observation Mode: Partial (each agent sees only previous agent's solution)")
     print(f"Total Problems: {processed_problems}")
     print(f"Correct: {total_correct}")
@@ -357,7 +328,7 @@ def main():
     print(f"Accuracy: {accuracy:.2%}")
     
     # Save results
-    save_results([final_results], RESULT_DIR, "partial_obs_no_integrator")
+    save_results([final_results], RESULT_DIR, "local_partial_obs")
     print(f"Results saved to {RESULT_DIR}")
 
 

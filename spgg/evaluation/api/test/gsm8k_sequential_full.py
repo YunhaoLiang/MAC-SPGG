@@ -20,13 +20,12 @@ import json
 import logging
 
 # Add SPGG root directory to path for imports
-# test/ -> evaluation_gsm8k/ -> evaluation/ -> SPGG/
 SPGG_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.insert(0, SPGG_ROOT)
 
 from huggingface_hub import login
 
-from src.core import (
+from spgg.api.core import (
     PolicyNetwork,
     ValueNetwork,
     MathStateEncoder,
@@ -357,7 +356,7 @@ def main():
     # Checkpoint path (relative to SPGG root)
     # This checkpoint was trained under PO protocol.
     # Using it here for Full Observation is an ablation/generalization test to evaluate the checkpoint's transferability across different information settings.
-    checkpoint_path = os.path.join(SPGG_ROOT, "src", "checkpoints", "checkpoint.pt")
+    checkpoint_path = os.path.join(SPGG_ROOT, "spgg", "checkpoints", "checkpoint.pt")
     
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")

@@ -74,46 +74,52 @@ The framework operates in two distinct phases:
 
 ```
 SPGG/
-├── src/                                     # Source code directory
-│   ├── core/                                # Core inference components
-│   │   ├── agents.py                        # APIModelManager, agent implementations
-│   │   ├── config.py                            
-│   │   ├── networks.py                          
-│   │   ├── encoders.py                          
-│   │   └── utils.py                         # Parameter parsing, checkpoint loading
+├── spgg/                                    # Main package
+│   ├── api/                                 # API-based inference modules
+│   │   └── core/                            # API core components
+│   │       ├── agents.py                     # APIModelManager, agent implementations
+│   │       ├── config.py                            
+│   │       ├── networks.py                          
+│   │       ├── encoders.py                          
+│   │       └── utils.py                     # Parameter parsing, checkpoint loading
 │   │
 │   ├── checkpoints/                         # Model checkpoints
-│   │   └── checkpoint.pt                        
+│   │   └── checkpoint.pt                    # Pre-trained policy networks
+│   │
+│   ├── evaluation/                          # Evaluation modules
+│   │   ├── api/                             # API-based evaluation scripts
+│   │   │   └── test/                        # API evaluation test scripts
+│   │   └── local/                           # Local model evaluation
+│   │       ├── core/                        # Local model inference modules
+│   │       │   ├── agents.py                # LocalModelManager
+│   │       │   ├── config.py
+│   │       │   ├── networks.py
+│   │       │   ├── encoders.py
+│   │       │   └── utils.py
+│   │       └── test/                        # Local evaluation test scripts
+│   │
+│   ├── training/                            # Training pipeline
+│   │   └── evaluators/                      # Evaluator model training
+│   │       ├── qwen2.5_evaluator_training.py    
+│   │       └── utils/                       
 │   │
 │   └── utils/                               # Utility modules
 │       ├── pgg_rl_utils.py                      
 │       └── performance_metrics.py               
 │
+├── examples/                                # Example scripts (primary usage)
+│   ├── gsm8k_local_partial.py               # Local models + Partial observation (main)
+│   ├── gsm8k_local_full.py                  # Local models + Full observation
+│   ├── api/                                 # API-based alternatives
+│   │   ├── gsm8k_api_partial.py             # API models + Partial observation
+│   │   └── gsm8k_api_full.py                # API models + Full observation
+│   ├── notebooks/                           # Jupyter notebooks
+│   │   └── gsm8k_demo.ipynb                 
+│   └── README.md                            # Examples documentation
+│
 ├── assets/                                  # Images and static resources
 │   ├── work_flow.png                            
 │   └── Workflow.png                             
-│
-├── evaluation/
-│   ├── evaluation_gsm8k/                    # API-based evaluation suite
-│   │   └── test/
-│   │       ├── gsm8k_sequential_partial.py  # Partial observation protocol
-│   │       └── gsm8k_sequential_full.py     # Full observation protocol
-│   │
-│   └── local/                               # Local model evaluation
-│       ├── core/                            
-│       └── test/
-│           ├── gsm8k_local_partial.py      
-│           └── gsm8k_local_full.py          
-│
-├── training/
-│   └── evaluators/                          # Evaluator model training pipeline
-│       ├── qwen2.5_evaluator_training.py    
-│       ├── summeval_data_cleaner_colab.py   
-│       └── utils/
-│           ├── common.py                   
-│           ├── prompts.py                  
-│           ├── score_extractor.py           
-│           └── data_loader.py               
 │
 └── requirements.txt                        
 ```
@@ -157,27 +163,36 @@ HUGGINGFACE_TOKEN=your_hf_token              # Model downloads
 
 ## Quick Start
 
-### API-Based Evaluation (Partial Observation)
+### Local Model Evaluation (Recommended)
 
+**Partial Observation Mode** (Primary usage):
 ```bash
-cd evaluation/evaluation_gsm8k/test
-python gsm8k_sequential_partial.py
+python examples/gsm8k_local_partial.py
 ```
 
-
-### Local Model Evaluation (Full Observation)
-
+**Full Observation Mode** (Ablation test):
 ```bash
-cd evaluation/local/test
-python gsm8k_local_full.py
+python examples/gsm8k_local_full.py
 ```
 
 **Note**: Requires sufficient GPU memory to load all three models simultaneously (recommend 30GB+ VRAM).
 
+### API-Based Evaluation (Alternative)
+
+If you prefer using API services instead of local models:
+
+```bash
+# Partial observation with API models
+python examples/api/gsm8k_api_partial.py
+
+# Full observation with API models
+python examples/api/gsm8k_api_full.py
+```
+
 ### Evaluator Training
 
 ```bash
-cd training/evaluators
+cd spgg/training/evaluators
 # Update paths in qwen2.5_evaluator_training.py
 python qwen2.5_evaluator_training.py
 ```
@@ -185,12 +200,17 @@ python qwen2.5_evaluator_training.py
 
 ## Checkpoints
 
-The repository includes a inference checkpoint (3.0 MB) containing:
+The repository includes an inference checkpoint (`spgg/checkpoints/checkpoint.pt`, 3.0 MB) containing:
 
 - `config`: Training configuration and hyperparameters
 - `agents['Agent_Llama']['policy_net']`: Policy network for Llama
 - `agents['Agent_SMOLLM2']['policy_net']`: Policy network for SmolLM2  
 - `agents['Agent_Qwen']['policy_net']`: Policy network for Qwen
+
+**Important Notes:**
+- This checkpoint does not include any base LLM weights. Base models must be obtained from their original providers.
+- The released checkpoint was trained under the Partial Observation protocol.
+- Full Observation evaluation scripts use the same checkpoint as an ablation/generalization test.
 
 ---
 

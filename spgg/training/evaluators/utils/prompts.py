@@ -1,9 +1,5 @@
 """
 Prompt templates for summary evaluation.
-
-Implements the structured prompt format as specified in the paper:
-"Each training instance is formatted as a prompt containing the input document 
-and a candidate summary, followed by a constrained output template with four scores."
 """
 
 # Few-shot example for evaluation prompt
