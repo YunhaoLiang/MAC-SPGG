@@ -74,26 +74,26 @@ The framework operates in two distinct phases:
 
 ```
 SPGG/
-├── spgg/                                    # Main source package
-│   ├── checkpoints/                         # Model checkpoints
-│   │   └── checkpoint.pt                   # Policy network weights (3.0 MB)
+├── spgg/                                    
+│   ├── checkpoints/                         
+│   │   └── checkpoint.pt                   
 │   │
 │   ├── evaluation/                          # Evaluation modules
 │   │   ├── api/                            # API-based evaluation
 │   │   │   ├── core/                       # Core components for API models
-│   │   │   │   ├── agents.py              # APIModelManager, agent implementations
+│   │   │   │   ├── agents.py              
 │   │   │   │   ├── config.py              # Configuration
-│   │   │   │   ├── encoders.py            # State encoders
+│   │   │   │   ├── encoders.py           
 │   │   │   │   ├── networks.py            # Policy/Value networks
 │   │   │   │   └── utils.py               # Utilities
 │   │   │   │
-│   │   │   └── scripts/                    # API evaluation scripts
+│   │   │   └── scripts/                    
 │   │   │       ├── gsm8k_sequential_partial.py
 │   │   │       └── gsm8k_sequential_full.py
 │   │   │
-│   │   └── local/                          # Local model evaluation (Recommended)
+│   │   └── local/                          
 │   │       ├── core/                       # Core components for local models
-│   │       │   ├── agents.py              # LocalModelManager, agent implementations
+│   │       │   ├── agents.py              
 │   │       │   ├── config.py              
 │   │       │   ├── encoders.py            
 │   │       │   ├── networks.py            
@@ -103,8 +103,8 @@ SPGG/
 │   │           ├── gsm8k_local_partial.py
 │   │           └── gsm8k_local_full.py
 │   │
-│   ├── training/                            # Training pipeline
-│   │   └── evaluators/                     # Evaluator model training
+│   ├── training/                            
+│   │   └── evaluators/                     
 │   │       ├── qwen2.5_evaluator_training.py
 │   │       ├── summeval_data_cleaner_colab.py
 │   │       └── utils/
@@ -113,15 +113,16 @@ SPGG/
 │   │           ├── prompts.py             
 │   │           └── score_extractor.py     
 │   │
-│   └── utils/                               # General utilities
+│   └── utils/                               #
 │       ├── pgg_rl_utils.py                 
 │       └── performance_metrics.py          
 │
-├── assets/                                  # Images and static resources
+├── assets/                                  
+│   ├── Appendix.pdf                         # Supplementary materials
 │   ├── work_flow.png                       
 │   └── Workflow.png                        
 │
-├── requirements.txt                         # Python dependencies
+├── requirements.txt                        
 └── README.md                                # Documentation
 ```
 
